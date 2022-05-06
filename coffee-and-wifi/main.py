@@ -1,8 +1,8 @@
-from flask import Flask, render_template
+from flask import Flask, render_template, redirect, url_for
 from flask_bootstrap import Bootstrap
 from flask_wtf import FlaskForm
-from wtforms import StringField, SubmitField
-from wtforms.validators import DataRequired
+from wtforms import StringField, SelectField, SubmitField
+from wtforms.validators import DataRequired, URL
 import csv
 
 app = Flask(__name__)
@@ -12,16 +12,13 @@ Bootstrap(app)
 
 class CafeForm(FlaskForm):
     cafe = StringField('Cafe name', validators=[DataRequired()])
+    location = StringField('Cafe Location on Google Maps (URL)', validators=[DataRequired(), URL()])
+    open = StringField('Opening Time e.g. 8AM', validators=[DataRequired()])
+    close = StringField('Closing Time e.g. 5:30PM', validators=[DataRequired()])
+    coffee = SelectField(u'Coffee Rating', choices=[('☕️', '☕️'), ('☕️☕️', '☕️☕️'), ('☕️☕️☕️', '☕️☕️☕️'), ('☕️☕️☕️☕️', '☕️☕️☕️☕️'), ('☕️☕️☕️☕️☕️', '☕️☕️☕️☕️☕️')])
+    wifi = SelectField(u'Wifi Strength Rating', choices=[('✘', '✘'), ('💪', '💪'), ('💪💪', '💪💪'), ('💪💪💪', '💪💪💪'), ('💪💪💪💪', '💪💪💪💪'), ('💪💪💪💪💪', '💪💪💪💪💪')])
+    power = SelectField(u'Power Socket Availability', choices=[('✘', '✘'), ('🔌', '🔌'), ('🔌🔌', '🔌🔌'), ('🔌🔌🔌', '🔌🔌🔌'), ('🔌🔌🔌🔌', '🔌🔌🔌🔌'), ('🔌🔌🔌🔌🔌🔌', '🔌🔌🔌🔌🔌🔌')])
     submit = SubmitField('Submit')
-
-# Exercise:
-# add: Location URL, open time, closing time, coffee rating, wifi rating, power outlet rating fields
-# make coffee/wifi/power a select element with choice of 0 to 5.
-#e.g. You could use emojis ☕️/💪/✘/🔌
-# make all fields required except submit
-# use a validator to check that the URL field has a URL entered.
-# ---------------------------------------------------------------------------
-
 
 # all Flask routes below
 @app.route("/")
@@ -29,14 +26,20 @@ def home():
     return render_template("index.html")
 
 
-@app.route('/add')
+@app.route('/add', methods=['GET','POST'])
 def add_cafe():
     form = CafeForm()
     if form.validate_on_submit():
-        print("True")
-    # Exercise:
-    # Make the form write a new row into cafe-data.csv
-    # with   if form.validate_on_submit()
+        with open("cafe-data.csv", mode="a", encoding='utf-8') as csv_file:
+            csv_file.write(f"\n{form.cafe.data},"
+                            f"{form.location.data},"
+                            f"{form.open.data},"
+                            f"{form.close.data},"
+                            f"{form.coffee.data},"
+                            f"{form.wifi.data},"
+                            f"{form.power.data},"
+                            )
+        return redirect(url_for('cafes'))
     return render_template('add.html', form=form)
 
 
